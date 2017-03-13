@@ -461,6 +461,22 @@ def userlog(message):
         else:
             bot.send_message(message.chat.id, out)
 
+    elif message.text == smilemerop:
+        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
+                               charset='utf8mb4')
+        cur = conn.cursor()
+        cur.execute("SELECT Event FROM timetable WHERE Active=1;")
+        out=''
+        for row in cur:
+            out+=str(row[0])
+            out+='\n'
+        cur.close()
+        conn.close()
+        if out=='\n':
+            bot.send_message(message.chat.id, 'На данный момент нет активных мероприятий.', reply_markup=markup2)
+        else:
+            bot.send_message(message.chat.id, 'Сейчас проходят мероприятия: \n'+out, reply_markup=markup2)
+
     elif message.text == robosmile:
         bot.send_message(message.chat.id, 'Введите идентификатор квеста, который вы хотите пройти.', reply_markup=hide)
         bot.register_next_step_handler(message, startquest)
