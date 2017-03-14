@@ -124,7 +124,7 @@
 * CREATE TABLE trophy(ChatID INT unsigned NOT NULL, Achiev varchar(255) NOT NULL) ENGINE=InnoDB;
 * CREATE TABLE timetable(Date DATE NOT NULL, Start TIME NOT NULL, Finish TIME NOT NULL, Event varchar(255) NOT NULL, Active TINYINT unsigned NULL DEFAULT 0)ENGINE=InnoDB;
 
-### Установка самого бота
+### Настройка бота
 Скачайте этот репозиторий и извлеките файлы source и config в отдельную папку. Откройте файл config. В переменную token необходимо вставить токен бота, который дает @BotFather при регистрации бота. В переменные password и admin можно вставить желаемые пароли пользователя и администратора соотвественно. Когда все выше описанное будет сделано, запустите source. Пока этот код запущен, бот будет работать.  
 
 Если у вас остались какие то вопросы, связаться со мной можно:  
