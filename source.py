@@ -317,9 +317,9 @@ def addcontact(message):
 
 # 4.2.6 Добавление места жительства
 def addhome(message):
-    chatid = ''
     msg = message.text.split('\n')
     for data in msg:
+        chatid=''
         data = data.split(' : ')
         if len(data) == 2:
             name = data[0]
@@ -329,20 +329,19 @@ def addhome(message):
             cur = conn.cursor()
             cur.execute("SELECT ChatID FROM main WHERE name='" + name + "';")
             for row in cur:
-                chatid = row
-            if chatid == '':
-                bot.send_message(message.chat.id, 'Не удалось найти пользователя! Проверьте формат ввода.',
-                                 reply_markup=markup3)
-                cur.close()
-                conn.close()
-            else:
-                chatid = int(chatid[0])
+                chatid = int(row[0])
+            try:
                 cur.execute("UPDATE main SET Home='" + home1 + "' WHERE ChatID=" + str(chatid) + ";")
                 conn.commit()
                 cur.close()
                 conn.close()
                 bot.send_message(message.chat.id, 'Место проживания успешно обновлено.',
                                  reply_markup=markup3)
+            except Exception:
+                bot.send_message(message.chat.id, 'Не удалось найти пользователя! Проверьте формат ввода.',
+                                 reply_markup=markup3)
+                cur.close()
+                conn.close()
         else:
             bot.send_message(message.chat.id, 'Неправильный формат ввода!', reply_markup=markup3)
 
@@ -388,7 +387,7 @@ def adminlog(message):
                                           'Полное_Имя Фамилия : Место жительства \n'
                                           'Пример: \n'
                                           'Василий Пупкин : Главный корпус, комната 209 \n'
-                                          'Вы можете ввести несколько пар в одном сообщении, начиная каждую'
+                                          'Вы можете ввести несколько пар в одном сообщении, начиная каждую '
                                           'пару с новой строки.', reply_markup=hide)
         bot.register_next_step_handler(message, addhome)
 
@@ -605,7 +604,7 @@ def passwordlog(message):
         bot.send_message(message.chat.id, 'Пароль неверный! Попробуйте еще раз.', reply_markup=markup)
 
 
-# 4.6. Проверка активных мероприятий
+# 4.5. Проверка активных мероприятий
 def checker():
     conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
                            charset='utf8mb4')
@@ -634,7 +633,7 @@ def checker():
 checker()
 
 
-# 4.7. Начало и регистрация (хендлеры)
+# 4.6. Начало и регистрация (хендлеры)
 @bot.message_handler(func=lambda message: (message.content_type == 'text'))
 def start(message):
     if ifregadmin(message.chat.id):
@@ -642,7 +641,7 @@ def start(message):
     elif ifreg(message.chat.id):
         if message.text == "/start":
             bot.send_message(message.chat.id, "Вас приветствует лагерь GoTo Camp! Чтобы продолжить, "
-                                              "зарегестрируйтесь!", reply_markup=markup)
+                                              "зарегистрируйтесь!", reply_markup=markup)
         if message.text == smilereg:
             bot.send_message(message.chat.id, "Введите пароль, сообщенный вам вожатыми!", reply_markup=hide)
             bot.register_next_step_handler(message, passwordlog)
@@ -650,7 +649,7 @@ def start(message):
         userlog(message)
 
 
-# 4.8. Callback Query хендлер для Inline-клавиатур
+# 4.7. Callback Query хендлер для Inline-клавиатур
 @bot.callback_query_handler(func=lambda c: True)
 def inline(c):
     if c.data == 'next':
@@ -685,7 +684,7 @@ def inline(c):
         bot.send_message(c.message.chat.id, 'Вы вышли из квеста.', reply_markup=markup2)
 
 
-# 4.9. Постоянный polling
+# 4.8. Постоянный polling
 if __name__ == '__main__':
     bot.polling(none_stop=True)
 
