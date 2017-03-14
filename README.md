@@ -102,14 +102,33 @@
 ### Python
 Для корректной работы бота нужен Python 3.5.2.  
 Также необходимо установить следующие библиотеки с помощью pip:  
+
 * pyTelegramBotAPI
 * datetime
 * pymysql
+
 ### MySQL
 Необходимо установить [MySQL Server](https://dev.mysql.com/downloads/mysql/). Во время установки, выберите следующие параметры:  
 * Host - localhost
 * Port - 3306
 * User - root
 * Password - password
+
 Когда MySQL установится, запустите MySQL Command Line Client Unicode и выполните следующие команды:
+
 * CREATE DATABASE goto;
+* USE goto;
+* CREATE TABLE admin(ChatID INT unsigned NOT NULL, Status TINYINT unsigned NULL, PRIMARY KEY(ChatID)) ENGINE = InnoDB;
+* CREATE TABLE main(ChatID INT unsigned NOT NULL, Name varchar(255) NOT NULL, Home varchar(255) NULL, PRIMARY KEY(ChatID))ENGINE=InnoDB;
+* CREATE TABLE contacts(contact varchar(255) NOT NULL) ENGINE=InnoDB;
+* CREATE TABLE trophy(ChatID INT unsigned NOT NULL, Achiev varchar(255) NOT NULL) ENGINE=InnoDB;
+* CREATE TABLE timetable(Date DATE NOT NULL, Start TIME NOT NULL, Finish TIME NOT NULL, Event varchar(255) NOT NULL, Active TINYINT unsigned NULL DEFAULT 0)ENGINE=InnoDB;
+
+### Установка самого бота
+Скачайте этот репозиторий и извлеките файлы source и config в отдельную папку. Откройте файл config. В переменную token необходимо вставить токен бота, который дает @BotFather при регистрации бота. В переменные password и admin можно вставить желаемые пароли пользователя и администратора соотвественно. Когда все выше описанное будет сделано, запустите source. Пока эта программа включена, бот будет работать.  
+
+Если у вас остались какие то вопросы, связаться со мной можно:  
+vk: [Александр Воронков](https://vk.com/pois0n)  
+telegram: @divingintodarkness  
+Спасибо за просмотр!  
+2017
