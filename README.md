@@ -1,5 +1,5 @@
 # GoToHub (@gotocamp_bot)
-![Логотип](logo.jpg)
+![Логотип](logosmall.jpg)
 ## Telegram чат-бот для лагеря GoTo
 ![Стартовое окно](screenshots/Вход.png)
 ### Вход и регистрация
