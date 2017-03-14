@@ -129,6 +129,6 @@
 
 Если у вас остались какие то вопросы, связаться со мной можно:  
 vk: [Александр Воронков](https://vk.com/pois0n)  
-telegram: @divingintodarkness  
+telegram: @diveintodarkness  
 Спасибо за просмотр!  
 2017
