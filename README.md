@@ -100,8 +100,8 @@
 ![Телефоны](screenshots/Телефоны.png)
 ## Установка и настройка
 ### Python
-Для корректной работы бота нужен Python 3.5.2.  
-Также необходимо установить следующие библиотеки с помощью pip:  
+Для корректной работы бота нужен [Python 3.5.2](https://www.python.org/downloads/).  
+Также необходимо установить следующие библиотеки с помощью [pip](https://pythonworld.ru/osnovy/pip.html):  
 
 * pyTelegramBotAPI
 * datetime
