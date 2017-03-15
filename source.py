@@ -736,7 +736,7 @@ def photos(message):
 @bot.message_handler(func=lambda message: (message.content_type == 'text'))
 def start(message):
     if ifregadmin(message.chat.id):
-            adminlog(message)
+        adminlog(message)
     elif ifreg(message.chat.id):
         userlog(message)
     elif checkparent(message.chat.id):
