@@ -16,6 +16,7 @@ admin_quest = {}
 # 1.2. Извлечение паролей из config.py
 password = config.password
 admin = config.admin
+parents = config.parents
 
 # 2. Смайлики и прочие константы
 
@@ -37,9 +38,12 @@ smiletrophyadmin = 'Добавить Достижение ' + chr(0x1F3C6)
 smileaddcontacts = 'Добавить Контакт ' + chr(0x1F609)
 smileaddhome = 'Место проживания ' + chr(0x1F3E0)
 
+# 2.3. Родительские константы
+vk = 'Группа лагеря ВКонтакте ' + chr(0x1F5A5)
+
 # 3. Визуальные клавиатуры
 
-hide = types.ReplyKeyboardHide()
+hide = types.ReplyKeyboardRemove()
 
 # 3.1. Интерфейс меню регистрации
 markup = types.ReplyKeyboardMarkup()
@@ -81,6 +85,15 @@ phones = types.KeyboardButton(smilephone)
 home = types.KeyboardButton(smilehome)
 markup5.row(phones, home)
 
+# 3.6. Родительский интерфейс
+markup6 = types.ReplyKeyboardMarkup()
+cntct = types.KeyboardButton(smilepodmig)
+rasp = types.KeyboardButton(smileclock)
+vkont = types.KeyboardButton(vk)
+markup6.row(cntct)
+markup6.row(rasp)
+markup6.row(vkont)
+
 
 # 4. Основной код
 
@@ -97,9 +110,9 @@ def ifreg(chatid):
     cur.close()
     conn.close()
     if out == '':
-        return True
-    else:
         return False
+    else:
+        return True
 
 
 # 4.1.2. Проверка админов
@@ -109,7 +122,25 @@ def ifregadmin(chatid):
     cur.execute("SELECT Status FROM admin WHERE ChatID=" + str(chatid) + ";")
     out = ""
     for row in cur:
-        out += str(row)
+        out += str(row[0])
+        break
+    cur.close()
+    conn.close()
+    if out == '':
+        return False
+    else:
+        return True
+
+
+# 4.1.3. Проверка родителей
+def checkparent(chatid):
+    conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto', charset='utf8mb4')
+    cur = conn.cursor()
+    cur.execute("SELECT Status FROM Parents WHERE ChatID=" + str(chatid) + ";")
+    out = ""
+    for row in cur:
+        out += str(row[0])
+        break
     cur.close()
     conn.close()
     if out == '':
@@ -119,6 +150,7 @@ def ifregadmin(chatid):
 
 
 # 4.2. Основной код админской части
+
 
 # 4.2.1. Рассылка
 def rassilka(message):
@@ -319,7 +351,7 @@ def addcontact(message):
 def addhome(message):
     msg = message.text.split('\n')
     for data in msg:
-        chatid=''
+        chatid = ''
         data = data.split(' : ')
         if len(data) == 2:
             name = data[0]
@@ -551,9 +583,44 @@ def userlog(message):
         bot.send_message(message.chat.id, 'Вы в юзере')
 
 
-# 4.4. Регистрация
+# 4.5. Основной код родительской части
 
-# 4.4.1. Добавление данных в БД
+# 4.5.1. Интерфейс родительской части
+def parentlog(message):
+    if message.text == vk:
+        bot.send_message(message.chat.id, 'Группа лагеря ВКонтакте:\n https://vk.com/goto_msk')
+
+    elif message.text == smilepodmig:
+        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
+                               charset='utf8mb4')
+        cur = conn.cursor()
+        cur.execute("SELECT contact FROM contacts;")
+        out = 'Контакты вожатых: \n'
+        for row in cur:
+            out += row[0] + '\n'
+        cur.close()
+        conn.close()
+        bot.send_message(message.chat.id, out)
+
+    elif message.text == smileclock:
+        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
+                               charset='utf8mb4')
+        cur = conn.cursor()
+        cur.execute("SELECT Start, Event FROM timetable WHERE Date=CURRENT_DATE() ORDER BY Start;")
+        out = 'Мероприятия на сегодня: \n'
+        for row in cur:
+            out += str(row[0]) + ' - ' + str(row[1]) + '\n'
+        cur.close()
+        conn.close()
+        if out == 'Мероприятия на сегодня: \n':
+            bot.send_message(message.chat.id, 'На сегодня мероприятий не залпанировано!')
+        else:
+            bot.send_message(message.chat.id, out)
+
+
+# 4.5. Регистрация
+
+# 4.5.1. Добавление данных в БД
 def adddata(message):
     if message.content_type == 'text':
         conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
@@ -579,7 +646,7 @@ def adddata(message):
                              reply_markup=markup)
 
 
-# 4.4.2. Проверка пароля
+# 4.5.2. Проверка пароля
 def passwordlog(message):
     global password
     global admin
@@ -599,12 +666,28 @@ def passwordlog(message):
         cur.execute("INSERT INTO admin (ChatID, Status) VALUES(" + str(message.chat.id) + ", 1);")
         conn.commit()
         cur.close()
+        conn.close()
+
+    elif message.text == parents:
+        bot.send_message(message.chat.id, 'Добро пожаловать в GoTo Hub! Здесь будут выкладываться'
+                                          ' фотографии и объявления для родителей. '
+                                          'Так же вы можете ознакомиться с расписанием дня'
+                                          ' пионеров на сегодня и узнать номера телефонов '
+                                          'вожатых лагеря.', reply_markup=markup6)
+        # Добавление родителя в бд
+        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
+                               charset='utf8mb4')
+        cur = conn.cursor()
+        cur.execute("INSERT INTO Parents (ChatID, Status) VALUES(" + str(message.chat.id) + ", 1);")
+        conn.commit()
+        cur.close()
+        conn.close()
 
     else:  # Неправильный пароль
         bot.send_message(message.chat.id, 'Пароль неверный! Попробуйте еще раз.', reply_markup=markup)
 
 
-# 4.5. Проверка активных мероприятий
+# 4.6. Проверка активных мероприятий
 def checker():
     conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
                            charset='utf8mb4')
@@ -633,23 +716,41 @@ def checker():
 checker()
 
 
-# 4.6. Начало и регистрация (хендлеры)
+# 4.7. Рассылка фотографий родителям
+@bot.message_handler(content_types=['photo'])
+def photos(message):
+    if ifregadmin(message.chat.id):
+        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
+                               charset='utf8mb4')
+        cur = conn.cursor()
+        cur.execute("SELECT ChatID FROM Parents;")
+        for row in cur:
+            chatid = str(row[0])
+            bot.forward_message(chatid, message.chat.id, message.message_id)
+        cur.close()
+        conn.close()
+        bot.send_message(message.chat.id, 'Фотография успешно разослана!')
+
+
+# 4.8. Хендлеры сообщений
 @bot.message_handler(func=lambda message: (message.content_type == 'text'))
 def start(message):
     if ifregadmin(message.chat.id):
-        adminlog(message)
+            adminlog(message)
     elif ifreg(message.chat.id):
+        userlog(message)
+    elif checkparent(message.chat.id):
+        parentlog(message)
+    else:
         if message.text == "/start":
             bot.send_message(message.chat.id, "Вас приветствует лагерь GoTo Camp! Чтобы продолжить, "
                                               "зарегистрируйтесь!", reply_markup=markup)
         if message.text == smilereg:
             bot.send_message(message.chat.id, "Введите пароль, сообщенный вам вожатыми!", reply_markup=hide)
             bot.register_next_step_handler(message, passwordlog)
-    else:
-        userlog(message)
 
 
-# 4.7. Callback Query хендлер для Inline-клавиатур
+# 4.9. Callback Query хендлер для Inline-клавиатур
 @bot.callback_query_handler(func=lambda c: True)
 def inline(c):
     if c.data == 'next':
@@ -684,9 +785,6 @@ def inline(c):
         bot.send_message(c.message.chat.id, 'Вы вышли из квеста.', reply_markup=markup2)
 
 
-# 4.8. Постоянный polling
+# 4.10. Постоянный polling
 if __name__ == '__main__':
     bot.polling(none_stop=True)
-
-    # При успешном прохождении квеста - рассылка админам
-    # Не создавать несколько квестов одновременно
