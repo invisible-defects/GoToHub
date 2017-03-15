@@ -103,7 +103,7 @@
 Для корректной работы бота нужен [Python 3.5.2](https://www.python.org/downloads/).  
 Также необходимо установить следующие библиотеки с помощью [pip](https://pythonworld.ru/osnovy/pip.html):  
 
-* pyTelegramBotAPI
+* pyTelegramBotAPI (если эта библиотека уже была установлена, обновите её, так как последняя версия имеет некоторые различия)
 * datetime
 * pymysql
 
@@ -118,8 +118,8 @@
 
 * CREATE DATABASE goto;
 * USE goto;
-* CREATE TABLE admin(ChatID INT unsigned NOT NULL, Status TINYINT unsigned NULL, PRIMARY KEY(ChatID)) ENGINE = InnoDB;
-* CREATE TABLE main(ChatID INT unsigned NOT NULL, Name varchar(255) NOT NULL, Home varchar(255) NULL, PRIMARY KEY(ChatID))ENGINE=InnoDB;
+* CREATE TABLE admin(ChatID INT unsigned NOT NULL, Status TINYINT unsigned NULL) ENGINE = InnoDB;
+* CREATE TABLE main(ChatID INT unsigned NOT NULL, Name varchar(255) NOT NULL, Home varchar(255) NULL)ENGINE=InnoDB;
 * CREATE TABLE contacts(contact varchar(255) NOT NULL) ENGINE=InnoDB;
 * CREATE TABLE trophy(ChatID INT unsigned NOT NULL, Achiev varchar(255) NOT NULL) ENGINE=InnoDB;
 * CREATE TABLE timetable(Date DATE NOT NULL, Start TIME NOT NULL, Finish TIME NOT NULL, Event varchar(255) NOT NULL, Active TINYINT unsigned NULL DEFAULT 0)ENGINE=InnoDB;
@@ -127,8 +127,35 @@
 ### Настройка бота
 Скачайте этот репозиторий и извлеките файлы source и config в отдельную папку. Откройте файл config. В переменную token необходимо вставить токен бота, который дает @BotFather при регистрации бота. В переменные password и admin можно вставить желаемые пароли пользователя и администратора соотвественно. Когда все выше описанное будет сделано, запустите source. Пока этот код запущен, бот будет работать.  
 
+## Обновление 1.2.
+
+>*Легенда гласит, что после этого обновления потом вечно названивающих мам и пап сокращается на 45%*
+
+В данном обновлении в бота был добавлен родительский интерфейс.  
+![Родительский интерфейс](screenshots/РодИнт.png)  
+### Контакты
+Родители могут посмотреть контакты, заполняемые вожатыми через амдинистраторский интерфейс.  
+![Контакты для родителей](screenshots/РодКонт.png)  
+### Расписание
+Чтобы родителям было проще и удобнее выбрать время для связи с ребенком, им предоставляется расписание мероприятий на текущий день.  
+![Мероприятия для родителей](screenshots/РодМероп.png)
+### Группа "ВКонтакте"
+Бот отправляет ссылку на группу лагеря Goto ВКонтакте.  
+![Группа ВКонтакте](screenshots/ВК.png)
+### Расссылка фотографий
+Чтобы вожатым было удобнее делиться фотографиями с родителями, при отправке фотографии администраторскому боту, она автоматически будет отправлена всем родителям.  
+
+Администраторская рассылка | Получение родителями
+---------------------|-------------------
+![Отправка фотографии](screenshots/админфото.png) | ![Получение фотографии](screenshots/родфото.png)
+
+### Активация обновления
+Так как этой функции не было в конкурсном задании, я решил вынести её в отдельную версию. Чтобы её активировать, выполните все действия для установки обычной версии, если этого еще не было сделано. Затем, выберите branch "Обновление 1.2." и загрузите его. Замените файлы source и config на новые. Настройте config по вашем предпочтениям. Откройте клиент MySQL и пропишите следующую команду:  
+* CREATE TABLE parents(ChatID INT unsigned NOT NULL, Status TINYINT unsigned NOT NULL DEFAULT 1)ENGINE=InnoDB;
+Поздравляю, обновление активированно!   
+
 Если у вас остались какие то вопросы, связаться со мной можно:  
 vk: [Александр Воронков](https://vk.com/pois0n)  
 telegram: @diveintodarkness  
 Спасибо за просмотр!  
-2017
+Март 2017
