@@ -39,7 +39,7 @@ smileaddhome = 'Место проживания ' + chr(0x1F3E0)
 
 # 3. Визуальные клавиатуры
 
-hide = types.ReplyKeyboardHide()
+hide = types.ReplyKeyboardRemove()
 
 # 3.1. Интерфейс меню регистрации
 markup = types.ReplyKeyboardMarkup()
@@ -97,9 +97,9 @@ def ifreg(chatid):
     cur.close()
     conn.close()
     if out == '':
-        return True
-    else:
         return False
+    else:
+        return True
 
 
 # 4.1.2. Проверка админов
@@ -109,7 +109,8 @@ def ifregadmin(chatid):
     cur.execute("SELECT Status FROM admin WHERE ChatID=" + str(chatid) + ";")
     out = ""
     for row in cur:
-        out += str(row)
+        out += str(row[0])
+        break
     cur.close()
     conn.close()
     if out == '':
@@ -119,6 +120,7 @@ def ifregadmin(chatid):
 
 
 # 4.2. Основной код админской части
+
 
 # 4.2.1. Рассылка
 def rassilka(message):
@@ -319,7 +321,7 @@ def addcontact(message):
 def addhome(message):
     msg = message.text.split('\n')
     for data in msg:
-        chatid=''
+        chatid = ''
         data = data.split(' : ')
         if len(data) == 2:
             name = data[0]
@@ -599,6 +601,7 @@ def passwordlog(message):
         cur.execute("INSERT INTO admin (ChatID, Status) VALUES(" + str(message.chat.id) + ", 1);")
         conn.commit()
         cur.close()
+        conn.close()
 
     else:  # Неправильный пароль
         bot.send_message(message.chat.id, 'Пароль неверный! Попробуйте еще раз.', reply_markup=markup)
@@ -633,20 +636,20 @@ def checker():
 checker()
 
 
-# 4.6. Начало и регистрация (хендлеры)
+# 4.6. Хендлеры сообщений
 @bot.message_handler(func=lambda message: (message.content_type == 'text'))
 def start(message):
     if ifregadmin(message.chat.id):
-        adminlog(message)
+            adminlog(message)
     elif ifreg(message.chat.id):
+        userlog(message)
+    else:
         if message.text == "/start":
             bot.send_message(message.chat.id, "Вас приветствует лагерь GoTo Camp! Чтобы продолжить, "
                                               "зарегистрируйтесь!", reply_markup=markup)
         if message.text == smilereg:
             bot.send_message(message.chat.id, "Введите пароль, сообщенный вам вожатыми!", reply_markup=hide)
             bot.register_next_step_handler(message, passwordlog)
-    else:
-        userlog(message)
 
 
 # 4.7. Callback Query хендлер для Inline-клавиатур
@@ -687,6 +690,3 @@ def inline(c):
 # 4.8. Постоянный polling
 if __name__ == '__main__':
     bot.polling(none_stop=True)
-
-    # При успешном прохождении квеста - рассылка админам
-    # Не создавать несколько квестов одновременно
