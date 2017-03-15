@@ -583,9 +583,9 @@ def userlog(message):
         bot.send_message(message.chat.id, 'Вы в юзере')
 
 
-# 4.5. Основной код родительской части
+# 4.4. Основной код родительской части
 
-# 4.5.1. Интерфейс родительской части
+# 4.4.1. Интерфейс родительской части
 def parentlog(message):
     if message.text == vk:
         bot.send_message(message.chat.id, 'Группа лагеря ВКонтакте:\n https://vk.com/goto_msk')
