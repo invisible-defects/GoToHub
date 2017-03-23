@@ -1,3 +1,6 @@
+# 1. Иниализация
+
+# 1.1. Импорт библиотек
 import telebot
 import config
 from datetime import *
@@ -5,17 +8,17 @@ import pymysql
 from telebot import types
 from threading import Timer
 
-# 1. Иниализация
-
-# 1.1. Иниализация бота
+# 1.2. Иниализация бота
 bot = telebot.TeleBot(config.token)
 quest_dict = {}
 team_dict = {}
 admin_quest = {}
 
-# 1.2. Извлечение паролей из config.py
+# 1.3. Извлечение паролей из config.py
 password = config.password
 admin = config.admin
+parents = config.parents
+
 
 # 2. Смайлики и прочие константы
 
@@ -23,7 +26,6 @@ admin = config.admin
 robosmile = 'Квесты ' + chr(0x1F916)
 smilepodmig = 'Контакты ' + chr(0x1F609)
 smiletrophy = 'Достижения ' + chr(0x1F3C6)
-smileclock = 'Расписание ' + chr(0x1F557)
 smilereg = 'Регистрация ' + chr(0x1F4DD)
 smilemerop = 'Что сейчас? ' + chr(0x1F514)
 smilephone = 'Телефоны ' + chr(0x1F4DE)
@@ -36,6 +38,14 @@ smilemeropadmin = 'Срочное Сообщение ' + chr(0x1F514)
 smiletrophyadmin = 'Добавить Достижение ' + chr(0x1F3C6)
 smileaddcontacts = 'Добавить Контакт ' + chr(0x1F609)
 smileaddhome = 'Место проживания ' + chr(0x1F3E0)
+smilespisok = 'Список Пионеров ' + chr(0x1F4C3)
+
+# 2.3. Родительские константы
+vk = 'Группа лагеря ВКонтакте ' + chr(0x1F5A5)
+
+# 2.4. Общие константы
+smileclock = 'Расписание ' + chr(0x1F557)
+feedback = 'Обратная Связь ' + chr(0x260E)
 
 # 3. Визуальные клавиатуры
 
@@ -53,9 +63,10 @@ item3 = types.KeyboardButton(smiletrophy)
 item4 = types.KeyboardButton(robosmile)
 item5 = types.KeyboardButton(smilepodmig)
 item11 = types.KeyboardButton(smilemerop)
+userfeedback = types.KeyboardButton(feedback)
 markup2.row(item2, item11)
 markup2.row(item3, item4)
-markup2.row(item5)
+markup2.row(item5, userfeedback)
 
 # 3.3. Интерфейс админки
 markup3 = types.ReplyKeyboardMarkup()
@@ -65,9 +76,12 @@ item7 = types.KeyboardButton(smiletrophyadmin)
 item8 = types.KeyboardButton(robosmileadmin)
 item10 = types.KeyboardButton(smileaddcontacts)
 item12 = types.KeyboardButton(smileaddhome)
+adminfeedback = types.KeyboardButton(feedback)
+pioneers = types.KeyboardButton(smilespisok)
 markup3.row(item6, item9)
 markup3.row(item7, item8)
 markup3.row(item10, item12)
+markup3.row(adminfeedback, pioneers)
 
 # 3.4. Интерфейс кветса
 markup4 = types.InlineKeyboardMarkup()
@@ -80,6 +94,16 @@ markup5 = types.ReplyKeyboardMarkup()
 phones = types.KeyboardButton(smilephone)
 home = types.KeyboardButton(smilehome)
 markup5.row(phones, home)
+
+# 3.6. Родительский интерфейс
+markup6 = types.ReplyKeyboardMarkup()
+cntct = types.KeyboardButton(smilepodmig)
+rasp = types.KeyboardButton(smileclock)
+vkont = types.KeyboardButton(vk)
+parentfeedback = types.KeyboardButton(feedback)
+markup6.row(cntct)
+markup6.row(rasp)
+markup6.row(vkont, parentfeedback)
 
 
 # 4. Основной код
@@ -119,13 +143,30 @@ def ifregadmin(chatid):
         return True
 
 
+# 4.1.3. Проверка родителей
+def checkparent(chatid):
+    conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto', charset='utf8mb4')
+    cur = conn.cursor()
+    cur.execute("SELECT Status FROM Parents WHERE ChatID=" + str(chatid) + ";")
+    out = ""
+    for row in cur:
+        out += str(row[0])
+        break
+    cur.close()
+    conn.close()
+    if out == '':
+        return False
+    else:
+        return True
+
+
 # 4.2. Основной код админской части
 
 
 # 4.2.1. Рассылка
 def rassilka(message):
     if message.content_type == 'text':
-        out = "Срочная рассылка: \n"
+        out = "*Срочная рассылка* " + chr(0x2709) + "\n"
         out += message.text
         conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
                                charset='utf8mb4')
@@ -133,7 +174,7 @@ def rassilka(message):
         cur.execute("SELECT ChatID FROM main;")
         for row in cur:
             chatid = str(row[0])
-            bot.send_message(int(chatid), out)
+            bot.send_message(int(chatid), out, parse_mode="Markdown")
         cur.close()
         conn.close()
         bot.send_message(message.chat.id, 'Сообщение успешно разосланно!', reply_markup=markup3)
@@ -212,7 +253,7 @@ def addtrophy(message):
                 cur.close()
                 conn.close()
                 bot.send_message(message.chat.id, 'Достижение успешно добавлено!', reply_markup=markup3)
-                bot.send_message(chatid, 'Вы получили достижение: ' + trophy)
+                bot.send_message(chatid, '*Вы получили достижение* ' + chr(0x1F38A) + '\n' + trophy, parse_mode="Markdown")
         else:
             bot.send_message(message.chat.id, 'Неправильный формат ввода!', reply_markup=markup3)
 
@@ -250,7 +291,7 @@ def addquestions(message):
                                           'придумайте собственный идентификатор, состоящий из одного слова. '
                                           'Вы можете отправить несколько идентификаторов в одном сообщении, '
                                           'начиная каждый последующий с новой строки. '
-                                          'Когда закончите, отправьте "Готово!"')
+                                          'Когда закончите, отправьте *"Готово!"*', parse_mode='Markdown')
         bot.register_next_step_handler(message, addkey)
     else:
         msg = message.text.split('\n')
@@ -294,10 +335,10 @@ def newquest(message):
             conn.close()
             bot.send_message(message.chat.id, 'Далее введите вопросы и ответы квеста в формате: "Вопрос : Ответ". \n '
                                               'Пример: '
-                                              '\n "Продолжите фразу - программисты не рождаются, программисты... : '
-                                              'Наследуются"\n Вы можете отправить несколько вопросов в одном сообще'
+                                              '\n _"Продолжите фразу - программисты не рождаются, программисты... : '
+                                              'Наследуются"_ \n Вы можете отправить несколько вопросов в одном сообще'
                                               'нии, начиная каждую новую пару с новой строки. '
-                                              'Когда закончите, отправьте "Готово!"')
+                                              'Когда закончите, отправьте *"Готово!"*', parse_mode="Markdown")
             bot.register_next_step_handler(message, addquestions)
         except pymysql.err.InternalError:
             bot.send_message(message.chat.id, 'Такой квест уже существует.', reply_markup=markup3)
@@ -356,19 +397,19 @@ def adminlog(message):
 
     elif message.text == smiletrophyadmin:
         bot.send_message(message.chat.id, 'Введите получателя достижения, а затем наименование достижения в формате: \n'
-                                          'Полное_Имя Фамилия : Название и описание достижения \n Пример: \n'
-                                          '"Василий Пупкин : Костыли - наше Всё"\n'
+                                          'ПолноеИмя Фамилия : Название и описание достижения \n Пример: \n'
+                                          '_"Василий Пупкин : Костыли - наше Всё"_ \n'
                                           'Вы можете ввести несколько пар в одном сообщении, начиная каждую'
-                                          ' с новой строки.', reply_markup=hide)
+                                          ' с новой строки.', reply_markup=hide, parse_mode="Markdown")
         bot.register_next_step_handler(message, addtrophy)
 
     elif message.text == smileclockadmin:
         bot.send_message(message.chat.id,
                          'Введите информацию о мероприятии в формате: \n "Название и описание : Месяц День'
-                         ' Часы_Начала Минуты_Начала Часы_Конца Минуты_Конца" \n Пример: \n "Самый важный'
-                         ' сбор : 3 8 12 15 12 30"\n'
+                         ' ЧасыНачала МинутыНачала ЧасыКонца МинутыКонца" \n Пример: \n _"Самый важный'
+                         ' сбор : 3 8 12 15 12 30"_ \n'
                          'Вы можете ввести несколько меорпиятий в одном сообщении'
-                         ', начиная ввод каждого с новой строки.', reply_markup=hide)
+                         ', начиная ввод каждого с новой строки.', reply_markup=hide, parse_mode="Markdown")
         bot.register_next_step_handler(message, addevent)
 
     elif message.text == robosmileadmin:
@@ -379,19 +420,36 @@ def adminlog(message):
     elif message.text == smileaddcontacts:
         bot.send_message(message.chat.id, 'Введите свои контакты в удобной для вас форме. Не более 255 символов.'
                                           ' \n Пример: \n'
-                                          'Василий Пупкин - пионер 1 отряда, +7-999-999-99-99 \n'
+                                          '_"Василий Пупкин - пионер 1 отряда, +7-999-999-99-99"_ \n'
                                           'Вы можете ввести несколько контактов в одном сообщении,'
-                                          ' начиная каждый с новой строки.', reply_markup=hide)
+                                          ' начиная каждый с новой строки.', reply_markup=hide, parse_mode='Markdown')
         bot.register_next_step_handler(message, addcontact)
 
     elif message.text == smileaddhome:
         bot.send_message(message.chat.id, 'Введите место проживания пионера в формате: \n'
-                                          'Полное_Имя Фамилия : Место жительства \n'
+                                          'ПолноеИмя Фамилия : Место жительства \n'
                                           'Пример: \n'
-                                          'Василий Пупкин : Главный корпус, комната 209 \n'
+                                          '_"Василий Пупкин : Главный корпус, комната 209"_ \n'
                                           'Вы можете ввести несколько пар в одном сообщении, начиная каждую '
-                                          'пару с новой строки.', reply_markup=hide)
+                                          'пару с новой строки.', reply_markup=hide, parse_mode='Markdown')
         bot.register_next_step_handler(message, addhome)
+
+    elif message.text == smilespisok:
+        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
+                               charset='utf8mb4')
+        cur = conn.cursor()
+        cur.execute("SELECT Name FROM main ORDER BY Name;")
+        out = ''
+        num = 1
+        for row in cur:
+            out += str(num)+'. '+str(row[0])
+            num+=1
+        cur.close()
+        conn.close()
+        if out == '':
+            bot.send_message(message.chat.id, 'Никто из пионеров еще не зарегестрировался!')
+        else:
+            bot.send_message(message.chat.id, '*Список пионеров* \n'+out, parse_mode='Markdown')
 
     elif message.text == 'Я тут?':
         bot.send_message(message.chat.id, 'Вы в админке')
@@ -450,9 +508,9 @@ def continuequest(message):
                 bot.send_message(message.chat.id, 'Квест был пройден ранее!', reply_markup=markup2)
             else:
                 bot.send_message(message.chat.id,
-                                 'Для начала и для получения последующих вопросов, нажмите "Следующий вопрос!". '
-                                 'Для выхода, нажмите "Выход!".',
-                                 reply_markup=markup4)
+                                 'Для начала и для получения последующих вопросов, нажмите *"Следующий вопрос!"*. '
+                                 'Для выхода, нажмите *"Выход!"*.',
+                                 reply_markup=markup4, parse_mode='Markdown')
             bot.register_next_step_handler(message, playquest)
         except pymysql.err.ProgrammingError:
             bot.send_message(message.chat.id, 'Неправильный ключ квеста\команды!', reply_markup=markup2)
@@ -470,17 +528,19 @@ def startquest(message):
 # 4.3.6. Интерфейс пользовательской части
 def userlog(message):
     if message.text == smiletrophy:
-        out = "Список ваших достижений: \n"
+        trophies = 1
+        out = "*Ваши достижения "+chr(0x1F451)+"* \n"
         conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
                                charset='utf8mb4')
         cur = conn.cursor()
         cur.execute("SELECT Achiev FROM trophy WHERE ChatID=" + str(message.chat.id) + ";")
         for row in cur:
-            out += row[0] + "\n"
-        if out == "Список ваших достижений: \n":
+            out += str(trophies)+'. '+row[0] + "\n"
+            trophies += 1
+        if trophies == 1:
             bot.send_message(message.chat.id, 'У вас пока нет достижений!')
         else:
-            bot.send_message(message.chat.id, out)
+            bot.send_message(message.chat.id, out, parse_mode="Markdown")
 
     elif message.text == smilemerop:
         conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
@@ -489,29 +549,36 @@ def userlog(message):
         cur.execute("SELECT Event FROM timetable WHERE Active=2;")
         out = ''
         for row in cur:
-            out += str(row[0])
+            out += chr(0x2733) + ' ' + str(row[0])
             out += '\n'
         cur.close()
         conn.close()
         if out == '':
             bot.send_message(message.chat.id, 'На данный момент нет активных мероприятий.')
         else:
-            bot.send_message(message.chat.id, 'Сейчас проходят мероприятия: \n'+out)
+            bot.send_message(message.chat.id, '*Сейчас проходят мероприятия:* \n'+out, parse_mode='Markdown')
 
     elif message.text == smileclock:
         conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
                                charset='utf8mb4')
         cur = conn.cursor()
-        cur.execute("SELECT Start, Event FROM timetable WHERE Date=CURRENT_DATE() ORDER BY Start;")
-        out = 'Мероприятия на сегодня: \n'
+        cur.execute("SELECT Start, Event, Active FROM timetable WHERE Date=CURRENT_DATE() ORDER BY Start;")
+        out = ''
         for row in cur:
-            out += str(row[0]) + ' - '+str(row[1]) + '\n'
+            if row[2] == 3:
+                out += chr(0x2705) + ' '
+            elif row[2] == 0:
+                out += chr(0x274E) + ' '
+            elif row[2] == 1 or row[2] == 2:
+                out += chr(0x2733) + ' '
+            data = str(row[0])
+            out += data[:-3] + ' - ' +str(row[1]) + '\n'
         cur.close()
         conn.close()
-        if out == 'Мероприятия на сегодня: \n':
+        if out == '':
             bot.send_message(message.chat.id, 'На сегодня мероприятий не залпанировано!')
         else:
-            bot.send_message(message.chat.id, out)
+            bot.send_message(message.chat.id, '*Мероприятия на сегодня:* \n' + out, parse_mode="Markdown")
 
     elif message.text == robosmile:
         bot.send_message(message.chat.id, 'Введите идентификатор квеста, который вы хотите пройти.', reply_markup=hide)
@@ -525,12 +592,12 @@ def userlog(message):
                                charset='utf8mb4')
         cur = conn.cursor()
         cur.execute("SELECT contact FROM contacts;")
-        out = 'Контакты вожатых: \n'
+        out = '*Контакты вожатых* ' + chr(0x1F4F1) + '\n'
         for row in cur:
             out += row[0] + '\n'
         cur.close()
         conn.close()
-        bot.send_message(message.chat.id, out, reply_markup=markup2)
+        bot.send_message(message.chat.id, out, reply_markup=markup2, parse_mode="Markdown")
 
     elif message.text == smilehome:
         conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
@@ -553,9 +620,50 @@ def userlog(message):
         bot.send_message(message.chat.id, 'Вы в юзере')
 
 
-# 4.4. Регистрация
+# 4.4. Основной код родительской части
 
-# 4.4.1. Добавление данных в БД
+# 4.4.1. Интерфейс родительской части
+def parentlog(message):
+    if message.text == vk:
+        bot.send_message(message.chat.id, 'Группа лагеря ВКонтакте:\n https://vk.com/goto_msk')
+
+    elif message.text == smilepodmig:
+        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
+                               charset='utf8mb4')
+        cur = conn.cursor()
+        cur.execute("SELECT contact FROM contacts;")
+        out = '*Контакты вожатых* ' + chr(0x1F4F1) + '\n'
+        for row in cur:
+            out += row[0] + '\n'
+        cur.close()
+        conn.close()
+        bot.send_message(message.chat.id, out, parse_mode="Markdown")
+
+    elif message.text == smileclock:
+        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
+                               charset='utf8mb4')
+        cur = conn.cursor()
+        cur.execute("SELECT Start, Event, Active FROM timetable WHERE Date=CURRENT_DATE() ORDER BY Start;")
+        out = '*Мероприятия на сегодня:* \n'
+        for row in cur:
+            if row[2] == '3':
+                out += chr(0x2705) + ' '
+            elif row[2] == '0':
+                out += chr(0x274E) + ' '
+            elif row[2] == '1' or row[0] == '2':
+                out += chr(0x2733) + ' '
+            out += str(row[0]) + ' - ' + str(row[1]) + '\n'
+        cur.close()
+        conn.close()
+        if out == '*Мероприятия на сегодня:* \n':
+            bot.send_message(message.chat.id, 'На сегодня мероприятий не залпанировано!')
+        else:
+            bot.send_message(message.chat.id, out, parse_mode="Markdown")
+
+
+# 4.5. Регистрация
+
+# 4.5.1. Добавление данных в БД
 def adddata(message):
     if message.content_type == 'text':
         conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
@@ -581,7 +689,7 @@ def adddata(message):
                              reply_markup=markup)
 
 
-# 4.4.2. Проверка пароля
+# 4.5.2. Проверка пароля
 def passwordlog(message):
     global password
     global admin
@@ -589,7 +697,7 @@ def passwordlog(message):
         bot.send_message(message.chat.id,
                          'Великолепно! Теперь введите ваше полное имя, а затем - фамилию. ВАЖНО: соблюдайте порядок,'
                          ' вводите сначала ПОЛНОЕ имя, а потом - фамилию. \n Пример: '
-                         'Василий Пупкин')
+                         '_Василий Пупкин_', parse_mode='Markdown')
         bot.register_next_step_handler(message, adddata)
 
     elif message.text == admin:
@@ -603,19 +711,34 @@ def passwordlog(message):
         cur.close()
         conn.close()
 
+    elif message.text == parents:
+        bot.send_message(message.chat.id, 'Добро пожаловать в GoTo Hub! Здесь будут выкладываться'
+                                          ' фотографии и объявления для родителей. '
+                                          'Так же вы можете ознакомиться с расписанием дня'
+                                          ' пионеров на сегодня и узнать номера телефонов '
+                                          'вожатых лагеря.', reply_markup=markup6)
+        # Добавление родителя в бд
+        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
+                               charset='utf8mb4')
+        cur = conn.cursor()
+        cur.execute("INSERT INTO Parents (ChatID, Status) VALUES(" + str(message.chat.id) + ", 1);")
+        conn.commit()
+        cur.close()
+        conn.close()
+
     else:  # Неправильный пароль
         bot.send_message(message.chat.id, 'Пароль неверный! Попробуйте еще раз.', reply_markup=markup)
 
 
-# 4.5. Проверка активных мероприятий
+# 4.6. Проверка активных мероприятий
 def checker():
     conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
                            charset='utf8mb4')
     cur = conn.cursor()
     cur.execute("UPDATE timetable SET Active=1 WHERE (Date=CURRENT_DATE() AND CURRENT_TIME() >= Start AND CURRENT_"
                 "TIME() <= Finish AND Active = 0);")
-    cur.execute("UPDATE timetable SET Active=0 WHERE (Date!=CURRENT_DATE() OR CURRENT_TIME() < Start OR CURRENT_TIME() "
-                "> Finish);")
+    cur.execute("UPDATE timetable SET Active=3 WHERE (Date < CURRENT_DATE() OR (CURRENT_TIME() > Finish AND "
+                "Date=CURRENT_DATE()));")
     conn.commit()
     cur.execute("SELECT Event FROM timetable WHERE Active=1;")
     out = ''
@@ -636,23 +759,48 @@ def checker():
 checker()
 
 
-# 4.6. Хендлеры сообщений
+# 4.7. Рассылка фотографий родителям
+@bot.message_handler(content_types=['photo'])
+def photos(message):
+    if ifregadmin(message.chat.id):
+        conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
+                               charset='utf8mb4')
+        cur = conn.cursor()
+        cur.execute("SELECT ChatID FROM Parents;")
+        for row in cur:
+            chatid = str(row[0])
+            bot.forward_message(chatid, message.chat.id, message.message_id)
+        cur.close()
+        conn.close()
+        bot.send_message(message.chat.id, 'Фотография успешно разослана!')
+
+
+# 4.8. Хендлер сообщений
 @bot.message_handler(func=lambda message: (message.content_type == 'text'))
 def start(message):
-    if ifregadmin(message.chat.id):
-        adminlog(message)
-    elif ifreg(message.chat.id):
-        userlog(message)
+    if message.text == feedback:
+        bot.send_message(message.chat.id, 'Если у вас есть какие-то вопросы или пожелания по работе бота, '
+                                          'вы можете связаться со мной по этому нику в Telegram: \n'
+                                          '*@diveintodarkness* \n'
+                                          'Спасибо, что пользуетесь gotohub! ' + chr(0x263A), parse_mode='Markdown')
     else:
-        if message.text == "/start":
-            bot.send_message(message.chat.id, "Вас приветствует лагерь GoTo Camp! Чтобы продолжить, "
-                                              "зарегистрируйтесь!", reply_markup=markup)
-        if message.text == smilereg:
-            bot.send_message(message.chat.id, "Введите пароль, сообщенный вам вожатыми!", reply_markup=hide)
-            bot.register_next_step_handler(message, passwordlog)
+        if ifregadmin(message.chat.id):
+            adminlog(message)
+        elif ifreg(message.chat.id):
+            userlog(message)
+        elif checkparent(message.chat.id):
+            parentlog(message)
+        else:
+            if message.text == "/start":
+                bot.send_message(message.chat.id, "Вас приветствует лагерь GoTo Camp! Чтобы продолжить, "
+                                                  "зарегистрируйтесь! "+chr(0x270F), reply_markup=markup)
+            if message.text == smilereg:
+                bot.send_message(message.chat.id, "Введите пароль, сообщенный вам вожатыми! "+chr(0x1F4AC),
+                                 reply_markup=hide)
+                bot.register_next_step_handler(message, passwordlog)
 
 
-# 4.7. Callback Query хендлер для Inline-клавиатур
+# 4.9. Callback Query хендлер для Inline-клавиатур
 @bot.callback_query_handler(func=lambda c: True)
 def inline(c):
     if c.data == 'next':
@@ -668,7 +816,7 @@ def inline(c):
         cur.close()
         conn.close()
         if out == '':
-            bot.send_message(c.message.chat.id, "Поздравляем, вы прошли квест!", reply_markup=markup2)
+            bot.send_message(c.message.chat.id, "Поздравляем, вы прошли квест "+chr(0x1F389), reply_markup=markup2)
             conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='password', db='goto',
                                    charset='utf8mb4')
             cur = conn.cursor()
@@ -677,16 +825,16 @@ def inline(c):
                 chatid = str(row)
                 chatid = chatid[1:-2]
                 bot.send_message(int(chatid), "Команда " + team_dict[c.message.chat.id] + " прошла квест "
-                                 + (quest_dict[c.message.chat.id])[6:] + "!")
+                                 + (quest_dict[c.message.chat.id])[6:] + " "+chr(0x1F389))
             cur.close()
             conn.close()
 
         else:
             bot.send_message(c.message.chat.id, out, reply_markup=markup4)
     elif c.data == 'ext':
-        bot.send_message(c.message.chat.id, 'Вы вышли из квеста.', reply_markup=markup2)
+        bot.send_message(c.message.chat.id, 'Вы вышли из квеста. '+chr(0x1F3C1), reply_markup=markup2)
 
 
-# 4.8. Постоянный polling
+# 4.10. Постоянный polling
 if __name__ == '__main__':
     bot.polling(none_stop=True)
